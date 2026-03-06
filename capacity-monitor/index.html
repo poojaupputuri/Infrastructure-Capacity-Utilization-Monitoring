@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrastructure Capacity Monitor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* ==================== GLOBAL STYLES ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* ==================== LANDING PAGE STYLES ==================== */
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .landing-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            color: #2563eb;
+        }
+
+        .nav-button {
+            background: #2563eb;
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 6px;
+        }
+
+        .landing-hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+        }
+
+        .landing-hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .landing-hero p {
+            font-size: 18px;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+        }
+
+        .button.primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .button.secondary {
+            background: white;
+            color: #1e293b;
+        }
+
+        .landing-stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            padding: 60px 20px;
+            background: white;
+        }
+
+        .stat-card {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .stat-label {
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .landing-features {
+            padding: 60px 20px;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .landing-features h2 {
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .landing-footer {
+            text-align: center;
+            padding: 30px;
+            background: #1e293b;
+            color: white;
+        }
+
+        /* ==================== DASHBOARD STYLES ==================== */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+            display: none;
+        }
+
+        .dashboard.visible {
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .sidebar-header h2 {
+            color: #2563eb;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .back-btn {
+            background: none;
+            border: 1px solid #cbd5e1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .back-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .sidebar h3 {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            padding: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-item.overload { background: #000000; color: white; }
+        .stat-item.congested { background: #ff0000; color: white; }
+        .stat-item.underused { background: #0000ff; color: white; }
+        .stat-item.normal { background: #00ff00; color: black; }
+        .stat-item.high { background: #ffa500; color: black; }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Gauge */
+        .gauge {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .gauge-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        .gauge-label {
+            color: #64748b;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        /* Map Legend */
+        .legend-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* Alerts */
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .alert-badge {
+            background: #ff0000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .alerts-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 25px;
+        }
+
+        .alert-item {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .alert-item.overload {
+            background: #000000;
+            color: white;
+            border-left: 4px solid #ffffff;
+        }
+
+        .alert-item.congested {
+            background: #ff0000;
+            color: white;
+            border-left: 4px solid #ffffff;
+        }
+
+        .alert-item.underused {
+            background: #0000ff;
+            color: white;
+            border-left: 4px solid #ffffff;
+        }
+
+        .alert-time {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .alert-placeholder {
+            color: #94a3b8;
+            text-align: center;
+            padding: 15px;
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .filter-btn {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .filter-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        .filter-btn:hover {
+            background: #334155;
+            color: white;
+        }
+
+        /* Map Controls */
+        .map-controls-section {
+            margin-bottom: 25px;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-control-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .map-control-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        .map-control-btn:hover {
+            background: #334155;
+            color: white;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .zoom-btn {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .zoom-btn:hover {
+            background: #f1f5f9;
+        }
+
+        /* Status Update Panel */
+        .status-update-section {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .status-select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .update-btn {
+            width: 100%;
+            padding: 10px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .update-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .selected-asset-info {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 13px;
+            border-left: 3px solid #2563eb;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .dashboard-header h1 {
+            font-size: 20px;
+            color: #1e293b;
+        }
+
+        .header-time {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* Map Section */
+        .map-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .map-container {
+            height: 450px;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Table Section */
+        .table-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+
+        .loading-row {
+            text-align: center;
+            color: #94a3b8;
+            padding: 40px;
+        }
+
+        .capacity-bar {
+            width: 100px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .capacity-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .status-badge.overload { background: #000000; color: white; }
+        .status-badge.congested { background: #ff0000; color: white; }
+        .status-badge.underused { background: #0000ff; color: white; }
+        .status-badge.normal { background: #00ff00; color: black; }
+        .status-badge.high { background: #ffa500; color: black; }
+
+        .status-badge:hover {
+            opacity: 0.8;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .chart-section h2 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+
+        .bars-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+
+        .bar {
+            flex: 1;
+            background: #94a3b8;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s;
+            min-width: 20px;
+        }
+
+        .bar:hover {
+            background: #475569;
+        }
+
+        .bar-label {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            color: #64748b;
+            font-size: 11px;
+            padding: 0 5px;
+        }
+
+        /* City Section */
+        .city-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .city-section h2 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .city-card {
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .city-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1e293b;
+        }
+
+        .city-stats {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .city-stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        /* Popup Styles */
+        .leaflet-popup-content {
+            margin: 10px;
+            line-height: 1.4;
+            min-width: 200px;
+        }
+
+        .leaflet-popup-content h4 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .leaflet-popup-content p {
+            margin: 4px 0;
+            color: #475569;
+        }
+
+        .popup-status-btn {
+            display: inline-block;
+            padding: 6px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+
+        .popup-status-btn.overload { background: #000000; }
+        .popup-status-btn.congested { background: #ff0000; }
+        .popup-status-btn.underused { background: #0000ff; }
+        .popup-status-btn.normal { background: #00ff00; color: black; }
+        .popup-status-btn.high { background: #ffa500; color: black; }
+
+        .popup-status-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard.visible {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .landing-stats {
+                flex-direction: column;
+                gap: 30px;
+            }
+            
+            .landing-hero h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="landing-container">
+        <nav class="landing-nav">
+            <div class="nav-brand" onclick="showLanding()">CityCapacity</div>
+        </nav>
+
+        <div class="landing-hero">
+            <h1>Infrastructure Capacity Monitor</h1>
+            <p>Real-time monitoring of city infrastructure utilization. Track overloaded, congested, and underused assets across major Indian cities.</p>
+            <div>
+                <button class="button primary" onclick="showDashboard()">Launch Dashboard</button>
+                <button class="button secondary" onclick="scrollToFeatures()">Learn More</button>
+            </div>
+        </div>
+
+        <div class="landing-stats">
+            <div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Cities Monitored</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">31</div>
+                <div class="stat-label">Infrastructure Assets</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label">Real-time Updates</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Key Status Types</div>
+            </div>
+        </div>
+
+        <div id="features" class="landing-features">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Real-time Monitoring</h3>
+                    <p>Track infrastructure utilization in real-time with automatic updates every 30 seconds.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Color-Coded Map</h3>
+                    <p>Black = Overloaded, Red = Congested, Blue = Underused - instantly identify problem areas.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Smart Alerts</h3>
+                    <p>Get instant notifications when assets are overloaded, congested, or underused.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Multi-city Coverage</h3>
+                    <p>Monitor infrastructure across 10 major Indian cities in one unified dashboard.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="landing-footer">
+            <p>© 2024 CityCapacity. All rights reserved.</p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 onclick="showLanding()">CityCapacity</h2>
+                <button class="back-btn" onclick="showLanding()">← Back</button>
+            </div>
+
+            <!-- Overview Stats -->
+            <div class="stats-section">
+                <h3>CAPACITY OVERVIEW</h3>
+                <div class="stats-grid">
+                    <div class="stat-item overload" onclick="filterAssets('overload')">
+                        <span class="stat-label">Overloaded</span>
+                        <span class="stat-number" id="overloadCount">0</span>
+                    </div>
+                    <div class="stat-item congested" onclick="filterAssets('congested')">
+                        <span class="stat-label">Congested</span>
+                        <span class="stat-number" id="congestedCount">0</span>
+                    </div>
+                    <div class="stat-item underused" onclick="filterAssets('underused')">
+                        <span class="stat-label">Underused</span>
+                        <span class="stat-number" id="underusedCount">0</span>
+                    </div>
+                    <div class="stat-item normal" onclick="filterAssets('normal')">
+                        <span class="stat-label">Normal</span>
+                        <span class="stat-number" id="normalCount">0</span>
+                    </div>
+                    <div class="stat-item high" onclick="filterAssets('high')">
+                        <span class="stat-label">High Usage</span>
+                        <span class="stat-number" id="highCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Capacity -->
+            <div class="capacity-section">
+                <h3>SYSTEM CAPACITY</h3>
+                <div class="gauge">
+                    <div class="gauge-value" id="overallUtilization">0%</div>
+                    <div class="gauge-label">Overall Utilization</div>
+                </div>
+            </div>
+
+            <!-- Map Legend - Focus on 3 Main Status -->
+            <div class="legend-section">
+                <h3>MAP LEGEND</h3>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #000000;"></span>
+                        <span><strong>Overloaded</strong> (>100%) - Critical</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #ff0000;"></span>
+                        <span><strong>Congested</strong> (90-100%) - Warning</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #0000ff;"></span>
+                        <span><strong>Underused</strong> (<30%) - Low Utilization</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #ffa500;"></span>
+                        <span>High Usage (70-90%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #00ff00;"></span>
+                        <span>Normal (30-70%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Update Panel -->
+            <div class="status-update-section">
+                <h3>UPDATE ASSET STATUS</h3>
+                <div class="selected-asset-info" id="selectedAssetInfo">
+                    Click on any marker to select asset
+                </div>
+                <select id="statusSelect" class="status-select">
+                    <option value="overload">⚫ Overload (>100%)</option>
+                    <option value="congested">🔴 Congested (90-100%)</option>
+                    <option value="underused">🔵 Underused (<30%)</option>
+                    <option value="high">🟠 High Usage (70-90%)</option>
+                    <option value="normal">🟢 Normal (30-70%)</option>
+                </select>
+                <button class="update-btn" onclick="updateSelectedAssetStatus()">Update Status</button>
+            </div>
+
+            <!-- Live Alerts - Focus on Overload, Congested, Underused -->
+            <div class="alerts-section">
+                <div class="alerts-header">
+                    <h3>LIVE ALERTS</h3>
+                    <span class="alert-badge" id="alertCount">0</span>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <div class="alert-placeholder">No active alerts</div>
+                </div>
+            </div>
+
+            <!-- Quick Filters -->
+            <div class="filters-section">
+                <h3>QUICK FILTERS</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterAssets('all')">All Assets</button>
+                    <button class="filter-btn" onclick="filterAssets('overload')">⚫ Overloaded</button>
+                    <button class="filter-btn" onclick="filterAssets('congested')">🔴 Congested</button>
+                    <button class="filter-btn" onclick="filterAssets('underused')">🔵 Underused</button>
+                </div>
+            </div>
+
+            <!-- Map Controls -->
+            <div class="map-controls-section">
+                <h3>MAP CONTROLS</h3>
+                <div class="map-controls">
+                    <button class="map-control-btn active" onclick="toggleHeatmap(true)">Heatmap View</button>
+                    <button class="map-control-btn" onclick="toggleHeatmap(false)">Markers View</button>
+                </div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()">-</button>
+                    <button class="zoom-btn" onclick="resetView()">Reset</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <h1>Infrastructure Capacity Dashboard</h1>
+                <div class="header-time" id="currentTime"></div>
+            </header>
+
+            <!-- Map Container -->
+            <section class="map-section">
+                <div id="capacityMap" class="map-container"></div>
+            </section>
+
+            <!-- Assets Table -->
+            <section class="table-section">
+                <div class="table-container">
+                    <table id="assetsTable">
+                        <thead>
+                            <tr>
+                                <th>Asset Name</th>
+                                <th>Type</th>
+                                <th>City</th>
+                                <th>Current Usage</th>
+                                <th>Max Capacity</th>
+                                <th>Utilization</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assetsTableBody">
+                            <tr>
+                                <td colspan="8" class="loading-row">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Peak Hours Analysis -->
+            <section class="chart-section">
+                <h2>Peak Hours Analysis</h2>
+                <div class="chart-container">
+                    <div class="bars-container" id="peakHoursBars">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                    <div class="chart-labels">
+                        <span>12 AM</span>
+                        <span>4 AM</span>
+                        <span>8 AM</span>
+                        <span>12 PM</span>
+                        <span>4 PM</span>
+                        <span>8 PM</span>
+                        <span>11 PM</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- City-wise Distribution -->
+            <section class="city-section">
+                <h2>City-wise Distribution</h2>
+                <div class="city-grid" id="cityGrid">
+                    <!-- City cards will be generated -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ==================== SAMPLE DATA ====================
+        const assetsData = [
+            // Delhi Assets
+            { id: 1, name: 'Signature Bridge', type: 'Bridge', city: 'Delhi', currentUsage: 4200, maxCapacity: 5000, utilization: 84, status: 'high' },
+            { id: 2, name: 'Rajiv Chowk Metro', type: 'Metro', city: 'Delhi', currentUsage: 9200, maxCapacity: 8000, utilization: 115, status: 'overload' },
+            { id: 3, name: 'DND Flyway', type: 'Road', city: 'Delhi', currentUsage: 6500, maxCapacity: 7000, utilization: 93, status: 'congested' },
+            { id: 4, name: 'Okhla Water Plant', type: 'Utility', city: 'Delhi', currentUsage: 380, maxCapacity: 500, utilization: 76, status: 'high' },
+            // Mumbai Assets
+            { id: 5, name: 'Bandra-Worli Sea Link', type: 'Bridge', city: 'Mumbai', currentUsage: 1200, maxCapacity: 6000, utilization: 20, status: 'underused' },
+            { id: 6, name: 'Eastern Express Highway', type: 'Road', city: 'Mumbai', currentUsage: 5500, maxCapacity: 5000, utilization: 110, status: 'overload' },
+            { id: 7, name: 'CST Railway Station', type: 'Railway', city: 'Mumbai', currentUsage: 8500, maxCapacity: 10000, utilization: 85, status: 'high' },
+            { id: 8, name: 'Dharavi Water Plant', type: 'Utility', city: 'Mumbai', currentUsage: 320, maxCapacity: 400, utilization: 80, status: 'high' },
+            // Bangalore Assets
+            { id: 9, name: 'MG Road Metro', type: 'Metro', city: 'Bangalore', currentUsage: 7500, maxCapacity: 8000, utilization: 94, status: 'congested' },
+            { id: 10, name: 'Electronic City Flyover', type: 'Road', city: 'Bangalore', currentUsage: 4200, maxCapacity: 4500, utilization: 93, status: 'congested' },
+            { id: 11, name: 'Silk Board Junction', type: 'Road', city: 'Bangalore', currentUsage: 5800, maxCapacity: 5000, utilization: 116, status: 'overload' },
+            { id: 12, name: 'Cauvery Water Supply', type: 'Utility', city: 'Bangalore', currentUsage: 280, maxCapacity: 350, utilization: 80, status: 'high' },
+            // Chennai Assets
+            { id: 13, name: 'Chennai Central', type: 'Railway', city: 'Chennai', currentUsage: 4500, maxCapacity: 5000, utilization: 90, status: 'congested' },
+            { id: 14, name: 'Marina Beach', type: 'Public Space', city: 'Chennai', currentUsage: 2800, maxCapacity: 10000, utilization: 28, status: 'underused' },
+            { id: 15, name: 'Chennai Metro Central', type: 'Metro', city: 'Chennai', currentUsage: 3200, maxCapacity: 4000, utilization: 80, status: 'high' },
+            // Kolkata Assets
+            { id: 16, name: 'Howrah Bridge', type: 'Bridge', city: 'Kolkata', currentUsage: 3800, maxCapacity: 4000, utilization: 95, status: 'congested' },
+            { id: 17, name: 'Kolkata Metro', type: 'Metro', city: 'Kolkata', currentUsage: 4200, maxCapacity: 4500, utilization: 93, status: 'congested' },
+            { id: 18, name: 'Vidyasagar Setu', type: 'Bridge', city: 'Kolkata', currentUsage: 2800, maxCapacity: 3500, utilization: 80, status: 'high' },
+            // Hyderabad Assets
+            { id: 19, name: 'Hyderabad Metro', type: 'Metro', city: 'Hyderabad', currentUsage: 3500, maxCapacity: 6000, utilization: 58, status: 'normal' },
+            { id: 20, name: 'Hussain Sagar Road', type: 'Road', city: 'Hyderabad', currentUsage: 2800, maxCapacity: 4000, utilization: 70, status: 'normal' },
+            { id: 21, name: 'Outer Ring Road', type: 'Road', city: 'Hyderabad', currentUsage: 6200, maxCapacity: 6000, utilization: 103, status: 'overload' },
+            // Pune Assets
+            { id: 22, name: 'Katraj Tunnel', type: 'Tunnel', city: 'Pune', currentUsage: 1800, maxCapacity: 3000, utilization: 60, status: 'normal' },
+            { id: 23, name: 'Pune Metro', type: 'Metro', city: 'Pune', currentUsage: 2200, maxCapacity: 4000, utilization: 55, status: 'normal' },
+            { id: 24, name: 'Mumbai-Pune Expressway', type: 'Road', city: 'Pune', currentUsage: 5200, maxCapacity: 5000, utilization: 104, status: 'overload' },
+            // Ahmedabad Assets
+            { id: 25, name: 'Sabarmati Riverfront', type: 'Public Space', city: 'Ahmedabad', currentUsage: 1200, maxCapacity: 5000, utilization: 24, status: 'underused' },
+            { id: 26, name: 'BRTS Corridor', type: 'Road', city: 'Ahmedabad', currentUsage: 3800, maxCapacity: 4000, utilization: 95, status: 'congested' },
+            { id: 27, name: 'Kankaria Lake', type: 'Public Space', city: 'Ahmedabad', currentUsage: 800, maxCapacity: 3000, utilization: 27, status: 'underused' },
+            // Jaipur Assets
+            { id: 28, name: 'Jaipur Metro', type: 'Metro', city: 'Jaipur', currentUsage: 1800, maxCapacity: 3500, utilization: 51, status: 'normal' },
+            { id: 29, name: 'Tonk Road Flyover', type: 'Road', city: 'Jaipur', currentUsage: 3200, maxCapacity: 3500, utilization: 91, status: 'congested' },
+            // Lucknow Assets
+            { id: 30, name: 'Lucknow Metro', type: 'Metro', city: 'Lucknow', currentUsage: 2100, maxCapacity: 3500, utilization: 60, status: 'normal' },
+            { id: 31, name: 'Shaheed Path', type: 'Road', city: 'Lucknow', currentUsage: 4200, maxCapacity: 4500, utilization: 93, status: 'congested' }
+        ];
+
+        // City coordinates for map
+        const cityCoordinates = {
+            'Delhi': [28.6139, 77.2090],
+            'Mumbai': [19.0760, 72.8777],
+            'Bangalore': [12.9716, 77.5946],
+            'Chennai': [13.0827, 80.2707],
+            'Kolkata': [22.5726, 88.3639],
+            'Hyderabad': [17.3850, 78.4867],
+            'Pune': [18.5204, 73.8567],
+            'Ahmedabad': [23.0225, 72.5714],
+            'Jaipur': [26.9124, 75.7873],
+            'Lucknow': [26.8467, 80.9462]
+        };
+
+        // ==================== GLOBAL VARIABLES ====================
+        let map, heatLayer, markers = [];
+        let currentFilter = 'all';
+        let currentMapMode = 'markers'; // Start with markers view for better color visibility
+        let selectedAssetId = null;
+
+        // ==================== PAGE NAVIGATION ====================
+        function showDashboard() {
+            document.getElementById('landingPage').style.display = 'none';
+            document.getElementById('dashboard').classList.add('visible');
+            initDashboard();
+        }
+
+        function showLanding() {
+            document.getElementById('landingPage').style.display = 'flex';
+            document.getElementById('dashboard').classList.remove('visible');
+        }
+
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ==================== DASHBOARD FUNCTIONS ====================
+        function initDashboard() {
+            updateStats();
+            renderTable();
+            updateAlerts();
+            updatePeakHours();
+            updateOverallUtilization();
+            renderCityGrid();
+            updateTime();
+            initMap();
+            
+            setInterval(simulateRealTimeUpdate, 30000);
+            setInterval(updateTime, 1000);
+        }
+
+        function updateStats() {
+            const stats = {
+                overload: assetsData.filter(a => a.status === 'overload').length,
+                congested: assetsData.filter(a => a.status === 'congested').length,
+                high: assetsData.filter(a => a.status === 'high').length,
+                normal: assetsData.filter(a => a.status === 'normal').length,
+                underused: assetsData.filter(a => a.status === 'underused').length
+            };
+
+            document.getElementById('overloadCount').textContent = stats.overload;
+            document.getElementById('congestedCount').textContent = stats.congested;
+            document.getElementById('highCount').textContent = stats.high;
+            document.getElementById('normalCount').textContent = stats.normal;
+            document.getElementById('underusedCount').textContent = stats.underused;
+            
+            const criticalCount = stats.overload + stats.congested;
+            document.getElementById('alertCount').textContent = criticalCount;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('assetsTableBody');
+            
+            let filteredAssets = assetsData;
+            if (currentFilter !== 'all') {
+                filteredAssets = assetsData.filter(a => a.status === currentFilter);
+            }
+
+            if (filteredAssets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="loading-row">No assets found</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            filteredAssets.forEach(asset => {
+                const statusClass = `status-badge ${asset.status}`;
+                const fillColor = getStatusColor(asset.status);
+                
+                html += `<tr>
+                    <td>${asset.name}</td>
+                    <td>${asset.type}</td>
+                    <td>${asset.city}</td>
+                    <td>${asset.currentUsage.toLocaleString()}</td>
+                    <td>${asset.maxCapacity.toLocaleString()}</td>
+                    <td>
+                        <div class="capacity-bar">
+                            <div class="capacity-fill" style="width: ${asset.utilization}%; background: ${fillColor}"></div>
+                        </div>
+                        <div style="font-size: 11px; margin-top: 4px;">${asset.utilization}%</div>
+                    </td>
+                    <td><span class="${statusClass}" onclick="selectAssetById(${asset.id})">${asset.status.toUpperCase()}</span></td>
+                    <td><button class="${statusClass}" style="width:100%;" onclick="quickUpdateStatus(${asset.id})">Update</button></td>
+                </tr>`;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'overload': return '#000000';
+                case 'congested': return '#ff0000';
+                case 'underused': return '#0000ff';
+                case 'high': return '#ffa500';
+                case 'normal': return '#00ff00';
+                default: return '#94a3b8';
+            }
+        }
+
+        function updateAlerts() {
+            const alertsList = document.getElementById('alertsList');
+            const criticalAssets = assetsData.filter(a => a.status === 'overload' || a.status === 'congested' || a.status === 'underused');
+
+            if (criticalAssets.length === 0) {
+                alertsList.innerHTML = '<div class="alert-placeholder">No active alerts</div>';
+                return;
+            }
+
+            let html = '';
+            criticalAssets.slice(0, 5).forEach(asset => {
+                let message = '';
+                if (asset.status === 'overload') message = `⚫ ${asset.name} OVERLOADED at ${asset.utilization}%`;
+                else if (asset.status === 'congested') message = `🔴 ${asset.name} CONGESTED at ${asset.utilization}%`;
+                else if (asset.status === 'underused') message = `🔵 ${asset.name} UNDERUSED at ${asset.utilization}%`;
+                
+                html += `<div class="alert-item ${asset.status}" onclick="selectAssetById(${asset.id})">
+                    <div>${message}</div>
+                    <div class="alert-time">${new Date().toLocaleTimeString()}</div>
+                </div>`;
+            });
+            
+            alertsList.innerHTML = html;
+        }
+
+        function updatePeakHours() {
+            const barsContainer = document.getElementById('peakHoursBars');
+            const peakData = [30, 25, 20, 18, 20, 25, 40, 65, 85, 95, 90, 85, 80, 75, 70, 75, 85, 95, 100, 95, 80, 60, 45, 35];
+            
+            let html = '';
+            for (let i = 0; i < peakData.length; i += 2) {
+                const height = peakData[i];
+                const hour = i.toString().padStart(2, '0') + ':00';
+                html += `<div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                    <div class="bar" style="height: ${height}px;" title="${hour} - ${height}%"></div>
+                    <div class="bar-label">${hour}</div>
+                </div>`;
+            }
+            
+            barsContainer.innerHTML = html;
+        }
+
+        function updateOverallUtilization() {
+            const avg = Math.round(assetsData.reduce((sum, a) => sum + a.utilization, 0) / assetsData.length);
+            document.getElementById('overallUtilization').textContent = avg + '%';
+        }
+
+        function renderCityGrid() {
+            const cityGrid = document.getElementById('cityGrid');
+            const cities = [...new Set(assetsData.map(a => a.city))];
+            
+            let html = '';
+            cities.forEach(city => {
+                const cityAssets = assetsData.filter(a => a.city === city);
+                const avgUtil = Math.round(cityAssets.reduce((sum, a) => sum + a.utilization, 0) / cityAssets.length);
+                const overload = cityAssets.filter(a => a.status === 'overload').length;
+                const congested = cityAssets.filter(a => a.status === 'congested').length;
+                const underused = cityAssets.filter(a => a.status === 'underused').length;
+                
+                html += `<div class="city-card">
+                    <div class="city-name">${city}</div>
+                    <div class="city-stats">
+                        <div class="city-stat-item"><span>Total:</span><span>${cityAssets.length}</span></div>
+                        <div class="city-stat-item"><span>⚫ Overload:</span><span style="color: black; font-weight:bold;">${overload}</span></div>
+                        <div class="city-stat-item"><span>🔴 Congested:</span><span style="color: red; font-weight:bold;">${congested}</span></div>
+                        <div class="city-stat-item"><span>🔵 Underused:</span><span style="color: blue; font-weight:bold;">${underused}</span></div>
+                        <div class="city-stat-item"><span>Avg Util:</span><span>${avgUtil}%</span></div>
+                    </div>
+                </div>`;
+            });
+            
+            cityGrid.innerHTML = html;
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleString('en-IN');
+        }
+
+        function filterAssets(filter) {
+            currentFilter = filter;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((filter === 'all' && btn.textContent.includes('All')) || 
+                    (filter !== 'all' && btn.textContent.includes(filter))) {
+                    btn.classList.add('active');
+                }
+            });
+
+            renderTable();
+            filterMapByStatus(filter);
+        }
+
+        // ==================== ASSET STATUS UPDATE FUNCTIONS ====================
+        function selectAssetById(id) {
+            const asset = assetsData.find(a => a.id === id);
+            if (asset) {
+                selectedAssetId = id;
+                document.getElementById('selectedAssetInfo').innerHTML = 
+                    `<strong>Selected:</strong> ${asset.name}<br>
+                     <strong>Current Status:</strong> <span style="color:${getStatusColor(asset.status)}; font-weight:bold;">${asset.status.toUpperCase()}</span><br>
+                     <strong>Utilization:</strong> ${asset.utilization}%`;
+                
+                document.getElementById('statusSelect').value = asset.status;
+                
+                const coords = cityCoordinates[asset.city];
+                if (coords) {
+                    map.flyTo(coords, 10);
+                }
+            }
+        }
+
+        function updateSelectedAssetStatus() {
+            if (!selectedAssetId) {
+                alert('Please click on a marker or table row to select an asset first');
+                return;
+            }
+
+            const newStatus = document.getElementById('statusSelect').value;
+            const asset = assetsData.find(a => a.id === selectedAssetId);
+            
+            if (asset) {
+                asset.status = newStatus;
+                
+                switch(newStatus) {
+                    case 'overload': asset.utilization = 110; asset.currentUsage = Math.round(asset.maxCapacity * 1.1); break;
+                    case 'congested': asset.utilization = 95; asset.currentUsage = Math.round(asset.maxCapacity * 0.95); break;
+                    case 'underused': asset.utilization = 20; asset.currentUsage = Math.round(asset.maxCapacity * 0.2); break;
+                    case 'high': asset.utilization = 80; asset.currentUsage = Math.round(asset.maxCapacity * 0.8); break;
+                    case 'normal': asset.utilization = 50; asset.currentUsage = Math.round(asset.maxCapacity * 0.5); break;
+                }
+                
+                updateStats();
+                renderTable();
+                updateAlerts();
+                updateOverallUtilization();
+                renderCityGrid();
+                
+                if (currentMapMode === 'heatmap') {
+                    updateHeatmap();
+                } else {
+                    updateMarkers();
+                }
+                
+                document.getElementById('selectedAssetInfo').innerHTML = 
+                    `<strong>Selected:</strong> ${asset.name}<br>
+                     <strong>New Status:</strong> <span style="color:${getStatusColor(asset.status)}; font-weight:bold;">${asset.status.toUpperCase()}</span><br>
+                     <strong>Utilization:</strong> ${asset.utilization}% (Updated)`;
+            }
+        }
+
+        function quickUpdateStatus(id) {
+            selectAssetById(id);
+        }
+
+        function simulateRealTimeUpdate() {
+            const randomIndex = Math.floor(Math.random() * assetsData.length);
+            const asset = assetsData[randomIndex];
+            
+            const variation = Math.floor(Math.random() * 10) - 5;
+            let newUsage = asset.currentUsage + Math.floor(asset.maxCapacity * variation / 100);
+            newUsage = Math.max(0, Math.min(asset.maxCapacity * 1.5, newUsage));
+            
+            asset.currentUsage = newUsage;
+            asset.utilization = Math.round((newUsage / asset.maxCapacity) * 100);
+            
+            if (asset.utilization > 100) asset.status = 'overload';
+            else if (asset.utilization > 90) asset.status = 'congested';
+            else if (asset.utilization > 70) asset.status = 'high';
+            else if (asset.utilization > 30) asset.status = 'normal';
+            else asset.status = 'underused';
+            
+            updateStats();
+            renderTable();
+            updateAlerts();
+            updateOverallUtilization();
+            renderCityGrid();
+            
+            if (currentMapMode === 'heatmap') {
+                updateHeatmap();
+            } else {
+                updateMarkers();
+            }
+        }
+
+        // ==================== MAP FUNCTIONS ====================
+        function initMap() {
+            map = L.map('capacityMap').setView([22.5726, 78.9629], 5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Start with markers view for better color visibility
+            updateMarkers();
+        }
+
+        function updateHeatmap() {
+            if (heatLayer) map.removeLayer(heatLayer);
+
+            const filteredAssets = currentFilter === 'all' ? assetsData : assetsData.filter(a => a.status === currentFilter);
+            const heatData = [];
+            
+            filteredAssets.forEach(asset => {
+                const coords = cityCoordinates[asset.city];
+                if (coords) {
+                    let intensity = asset.utilization / 100;
+                    if (asset.status === 'overload') intensity *= 1.5;
+                    if (asset.status === 'congested') intensity *= 1.3;
+                    heatData.push([coords[0], coords[1], intensity]);
+                }
+            });
+
+            heatLayer = L.heatLayer(heatData, {
+                radius: 30,
+                blur: 20,
+                maxZoom: 10,
+                gradient: {
+                    0.0: '#0000ff', // Underused - Blue
+                    0.3: '#00ff00', // Normal - Green
+                    0.7: '#ffa500', // High - Orange
+                    0.9: '#ff0000', // Congested - Red
+                    1.0: '#000000'  // Overload - Black
+                },
+                minOpacity: 0.6
+            }).addTo(map);
+        }
+
+        function updateMarkers() {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            const filteredAssets = currentFilter === 'all' ? assetsData : assetsData.filter(a => a.status === currentFilter);
+
+            filteredAssets.forEach(asset => {
+                const coords = cityCoordinates[asset.city];
+                if (!coords) return;
+
+                const markerColor = getStatusColor(asset.status);
+                
+                // Different sizes for different statuses to make them stand out
+                let radius = 10;
+                if (asset.status === 'overload') radius = 14;
+                else if (asset.status === 'congested') radius = 12;
+                else if (asset.status === 'underused') radius = 8;
+                
+                const marker = L.circleMarker(coords, {
+                    radius: radius,
+                    fillColor: markerColor,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(map);
+
+                const popupContent = `
+                    <div style="min-width: 220px;">
+                        <h4 style="margin:0 0 10px 0;">${asset.name}</h4>
+                        <p><strong>City:</strong> ${asset.city}</p>
+                        <p><strong>Type:</strong> ${asset.type}</p>
+                        <p><strong>Usage:</strong> ${asset.currentUsage.toLocaleString()} / ${asset.maxCapacity.toLocaleString()}</p>
+                        <p><strong>Utilization:</strong> ${asset.utilization}%</p>
+                        <p><strong>Status:</strong> <span style="color: ${markerColor}; font-weight:bold;">${asset.status.toUpperCase()}</span></p>
+                        <hr style="margin:10px 0;">
+                        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:5px;">
+                            <button class="popup-status-btn overload" onclick="updateAssetStatusFromMap(${asset.id}, 'overload')">⚫ Overload</button>
+                            <button class="popup-status-btn congested" onclick="updateAssetStatusFromMap(${asset.id}, 'congested')">🔴 Congested</button>
+                            <button class="popup-status-btn underused" onclick="updateAssetStatusFromMap(${asset.id}, 'underused')">🔵 Underused</button>
+                            <button class="popup-status-btn high" onclick="updateAssetStatusFromMap(${asset.id}, 'high')">🟠 High</button>
+                            <button class="popup-status-btn normal" style="grid-column:span 2;" onclick="updateAssetStatusFromMap(${asset.id}, 'normal')">🟢 Normal</button>
+                        </div>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+
+                marker.on('click', function() {
+                    selectAssetById(asset.id);
+                });
+
+                markers.push(marker);
+            });
+        }
+
+        function updateAssetStatusFromMap(id, newStatus) {
+            const asset = assetsData.find(a => a.id === id);
+            if (asset) {
+                asset.status = newStatus;
+                
+                switch(newStatus) {
+                    case 'overload': asset.utilization = 110; asset.currentUsage = Math.round(asset.maxCapacity * 1.1); break;
+                    case 'congested': asset.utilization = 95; asset.currentUsage = Math.round(asset.maxCapacity * 0.95); break;
+                    case 'underused': asset.utilization = 20; asset.currentUsage = Math.round(asset.maxCapacity * 0.2); break;
+                    case 'high': asset.utilization = 80; asset.currentUsage = Math.round(asset.maxCapacity * 0.8); break;
+                    case 'normal': asset.utilization = 50; asset.currentUsage = Math.round(asset.maxCapacity * 0.5); break;
+                }
+                
+                updateStats();
+                renderTable();
+                updateAlerts();
+                updateOverallUtilization();
+                renderCityGrid();
+                
+                if (currentMapMode === 'heatmap') {
+                    updateHeatmap();
+                } else {
+                    updateMarkers();
+                }
+                
+                map.closePopup();
+                selectAssetById(id);
+            }
+        }
+
+        function toggleHeatmap(showHeatmap) {
+            currentMapMode = showHeatmap ? 'heatmap' : 'markers';
+            
+            document.querySelectorAll('.map-control-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (showHeatmap) {
+                markers.forEach(marker => map.removeLayer(marker));
+                updateHeatmap();
+            } else {
+                if (heatLayer) map.removeLayer(heatLayer);
+                updateMarkers();
+            }
+        }
+
+        function filterMapByStatus(status) {
+            if (currentMapMode === 'heatmap') {
+                if (heatLayer) map.removeLayer(heatLayer);
+                updateHeatmap();
+            } else {
+                updateMarkers();
+            }
+        }
+
+        function zoomIn() { map.zoomIn(); }
+        function zoomOut() { map.zoomOut(); }
+        function resetView() { map.setView([22.5726, 78.9629], 5); }
+
+        // Make functions globally available
+        window.showDashboard = showDashboard;
+        window.showLanding = showLanding;
+        window.scrollToFeatures = scrollToFeatures;
+        window.filterAssets = filterAssets;
+        window.toggleHeatmap = toggleHeatmap;
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.resetView = resetView;
+        window.selectAssetById = selectAssetById;
+        window.updateSelectedAssetStatus = updateSelectedAssetStatus;
+        window.quickUpdateStatus = quickUpdateStatus;
+        window.updateAssetStatusFromMap = updateAssetStatusFromMap;
+    </script>
+</body>
+</html>

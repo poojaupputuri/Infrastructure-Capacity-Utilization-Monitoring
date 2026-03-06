@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "totalAssets": 31,
+    "cities": 10,
+    "lastUpdated": "2024-03-06T12:00:00Z",
+    "version": "1.0"
+  },
+  "assets": [
+    {
+      "id": 1,
+      "name": "Signature Bridge",
+      "type": "Bridge",
+      "city": "Delhi",
+      "currentUsage": 4200,
+      "maxCapacity": 5000,
+      "utilization": 84,
+      "status": "high",
+      "coordinates": {
+        "lat": 28.7087,
+        "lng": 77.2297
+      }
+    },
+    {
+      "id": 2,
+      "name": "Rajiv Chowk Metro Station",
+      "type": "Metro",
+      "city": "Delhi",
+      "currentUsage": 9200,
+      "maxCapacity": 8000,
+      "utilization": 115,
+      "status": "overload",
+      "coordinates": {
+        "lat": 28.6328,
+        "lng": 77.2197
+      }
+    },
+    {
+      "id": 5,
+      "name": "Bandra-Worli Sea Link",
+      "type": "Bridge",
+      "city": "Mumbai",
+      "currentUsage": 1200,
+      "maxCapacity": 6000,
+      "utilization": 20,
+      "status": "underused",
+      "coordinates": {
+        "lat": 19.0368,
+        "lng": 72.8180
+      }
+    }
+  ],
+  "thresholds": {
+    "overload": 100,
+    "congested": 90,
+    "high": 70,
+    "normal": 30,
+    "underused": 0
+  }
+}
